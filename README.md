@@ -32,10 +32,16 @@ A JavaScript userscript for [Jigsaw Explorer](https://www.jigsawexplorer.com/) u
 ## Screenshots
 
 ### Hint Panel
-<img src="images/hint-panel.png" width="450" alt="Hint Panel">
+
+<p align="center">
+  <img src="images/hint-panel.png" width="250" alt="Hint Panel">
+</p>
 
 ### Matching Results
-<img src="images/matching-results.png" width="600" alt="Matching Results">
+
+<p align="center">
+  <img src="images/matching-results.png" width="350" alt="Matching Results">
+</p>
 
 ## Limitations
 - Rows and columns must be counted manually
