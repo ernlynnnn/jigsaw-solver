@@ -198,7 +198,7 @@
     
             const cellWidth = canvas.width / this.cols;
             const cellHeight = canvas.height / this.rows;
-            const colors = ["green", "yellow", "white"];
+            const colors = ["white", "yellow", "green"];
     
             matches.forEach((match, index) => {
                 const x = (match.col - 1) * cellWidth;
@@ -211,12 +211,15 @@
     
             console.log("top 3 match:", matches);
     
-            this.results.innerHTML = matches.map((match, index) => `
-                <p>
-                    ${index + 1}. row ${match.row}, column ${match.col}
-                    (score: ${match.score.toFixed(3)})
-                </p>
-            `).join("");
+            this.results.innerHTML = `
+                <strong>Top 3 Matches</strong>
+                ${matches.map((match, index) => `
+                    <p>
+                        ${index + 1}. Row ${match.row}, Column ${match.col}
+                        (Score: ${match.score.toFixed(3)})
+                    </p>
+                `).join("")}
+            `;
         }
 
         getDragElements() {
