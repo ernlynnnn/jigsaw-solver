@@ -48,3 +48,9 @@ A JavaScript userscript for [Jigsaw Explorer](https://www.jigsawexplorer.com/) u
 - Matching accuracy depends on the selected region and image alignment
 - Unable to locate scattered pieces by selecting a reference grid cell
 - Does not automatically move puzzle pieces
+
+## Accuracy 
+- Tested on a 125-piece puzzle
+- 121 out of 125 pieces correctly matched
+- 4 pieces matched to incorrect positions
+- Accuracy: 96.8%
