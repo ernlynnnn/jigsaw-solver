@@ -17,15 +17,25 @@
             this.root = root; 
             this.element = null; 
             this.referenceImage = null; 
+            this.rows = 3; 
+            this.cols = 3; 
         }
 
         // create and display the panel 
         mount() {
-            // avoid duplicates 
-            if (this.element) return; 
-
-            const panel = this.root.createElement("section"); 
+            const panel = this.root.createElement("section");
             panel.id = "jigsaw-hint-panel"; 
+
+            this.preview = this.root.createElement("canvas");
+
+            Object.assign(this.preview.style, {
+                width: "100%",
+                marginTop: "10px",
+                marginBottom: "10px", 
+                display: "block"
+            });
+
+            
 
             // panel style 
             Object.assign(panel.style, {
@@ -41,7 +51,7 @@
                 color: "white", 
                 border: "1px solid black", 
                 borderRadius: "10px", 
-                font: "13px, sans-serif", 
+                font: "13px sans-serif", 
                 zIndex: "99999999999"       // control which elem appears infront when overlap 
             }); 
 
@@ -54,31 +64,98 @@
             imageInput.type = "file"; 
             imageInput.accept = "image/*"; 
 
-            const preview = this.root.createElement("img"); 
-            Object.assign(preview.style, {
-                width: "100%", 
-                marginTop: "10px"
+            imageInput.addEventListener("change", () => {
+                const file = imageInput.files[0];
+                if (!file) return;
+
+                const imageURL = URL.createObjectURL(file);
+                const image = new Image();
+
+                image.onload = () => {
+                    this.referenceImage = image;
+                    this.drawGrid();
+
+                    URL.revokeObjectURL(imageURL);
+                };
+
+                image.src = imageURL;
+            });
+
+            panel.append(imageInput, this.preview)
+
+            // create rows and cols input 
+            const rowsInput = this.root.createElement("input"); 
+            const colsInput = this.root.createElement("input"); 
+
+            rowsInput.type = colsInput.type = "number"; 
+            rowsInput.value = this.rows; 
+            colsInput.value = this.cols; 
+
+            Object.assign(rowsInput.style, { width: "50px" });
+            Object.assign(colsInput.style, { width: "50px" });
+
+            // redraw grid when row or col changes 
+            rowsInput.addEventListener("change", () => {
+                this.rows = Math.max(1, Math.min(100, Number(rowsInput.value) || 3)); 
+                this.drawGrid(); 
             })
 
-            imageInput.addEventListener("change", () => {
-                const file = imageInput.files[0]; 
-                if (!file) return; 
+            colsInput.addEventListener("change", () => {
+                this.cols = Math.max(1, Math.min(100, Number(colsInput.value) || 3)); 
+                this.drawGrid(); 
+            })
 
-                const imageURL = URL.createObjectURL(file); 
+            // add elems to panel 
+            const rowsLabel = this.root.createElement("label"); 
+            const colsLabel = this.root.createElement("label"); 
 
-                preview.onload = () => {
-                    this.referenceImage = preview; 
-                    URL.revokeObjectURL(imageURL); 
-                }
+            rowsLabel.append("rows: ", rowsInput);
+            colsLabel.append("cols: ", colsInput);
 
-                preview.src = imageURL;
-            }); 
-
-            panel.append(imageInput, preview)
+            panel.append(rowsLabel, colsLabel);
 
             this.root.body.appendChild(panel); 
 
             this.element = panel; 
+        }
+
+        // draw image w grid lines
+        drawGrid() {
+            if (!this.referenceImage) return;
+
+            const canvas = this.preview;
+            const ctx = canvas.getContext("2d");
+
+            canvas.width = this.referenceImage.naturalWidth;
+            canvas.height = this.referenceImage.naturalHeight;
+
+            // redraw original image to clear previous grid lines
+            ctx.drawImage(this.referenceImage, 0, 0);
+
+            Object.assign(ctx, {
+                strokeStyle: "red",
+                lineWidth: 3
+            });
+
+            // draw vertical lines
+            for (let col = 1; col < this.cols; col++) {
+                const x = col * canvas.width / this.cols;
+
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+
+            // draw horizontal lines
+            for (let row = 1; row < this.rows; row++) {
+                const y = row * canvas.height / this.rows;
+
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
         }
 
         getDragElements() {
@@ -151,7 +228,7 @@
         }
     }
 
-    async function main() {
+    function main() {
 
         const canvas = document.querySelector("#jigex-canvas");
 
