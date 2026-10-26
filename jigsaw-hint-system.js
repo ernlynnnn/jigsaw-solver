@@ -46,7 +46,7 @@
                 overflowY: "auto", 
                 boxSizing: "border-box", 
                 padding: "12px", 
-                background: "blue", 
+                background: "rgba(20, 25, 35, 0.85)", 
                 color: "white", 
                 border: "1px solid black", 
                 borderRadius: "10px", 
