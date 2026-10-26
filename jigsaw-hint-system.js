@@ -128,6 +128,17 @@
             
             panel.append(selectPiece)
 
+            this.selectedPreview = this.root.createElement("canvas");
+
+            Object.assign(this.selectedPreview.style, {
+                display: "block",
+                width: "120px",
+                height: "120px", 
+                marginTop: "10px"
+            });
+
+            panel.append(this.selectedPreview);
+
 
             this.root.body.appendChild(panel); 
 
@@ -340,6 +351,26 @@
         }
     }
 
+    // crop selected piece from puzzle canvas
+    function capturePiece(canvas, selection) {
+        const piece = document.createElement("canvas");
+
+        piece.width = Math.round(selection.width * canvas.width);
+        piece.height = Math.round(selection.height * canvas.height);
+
+        piece.getContext("2d").drawImage(
+            canvas,
+            selection.u * canvas.width,
+            selection.v * canvas.height,
+            selection.width * canvas.width,
+            selection.height * canvas.height,
+            0, 0, piece.width, piece.height
+        );
+
+        return piece;
+    }
+
+
     function main() {
 
         const canvas = document.querySelector("#jigex-canvas");
@@ -355,7 +386,12 @@
         if (!canvas) return; 
 
         const selector = new PieceSelector(canvas, (selection) => {
-            console.log("Selected region:", selection);
+            const piece = capturePiece(canvas, selection);
+
+            hintPanel.selectedPreview.width = piece.width;
+            hintPanel.selectedPreview.height = piece.height;
+
+            hintPanel.selectedPreview.getContext("2d").drawImage(piece, 0, 0);
         });
 
         hintPanel.selectPiece.addEventListener("click", () => {
