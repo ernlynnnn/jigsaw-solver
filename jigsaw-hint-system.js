@@ -130,6 +130,72 @@
                 this.statusElement.textContent = message; 
             }
         }
+
+        getDragElements() {
+            return {
+                panel: this.element, 
+                handle: this.element.querySelector("strong")
+            }; 
+        }
+    }
+
+    // allow hint panel to be dragged around 
+    class PanelDragger {
+        constructor(panel, handle) {
+            this.panel = panel;
+            this.handle = handle;
+        }
+
+        // attach pointer event listeners
+        attach() {
+            this.handle.style.cursor = "grab";
+            this.handle.style.touchAction = "none";
+
+            let offsetX = 0;
+            let offsetY = 0;
+            let dragging = false;
+
+            // start dragging when user press the handle 
+            this.handle.addEventListener("pointerdown", (event) => {
+                if (event.button !== 0) return;
+
+                dragging = true;
+
+                // get panels current pos 
+                const rect = this.panel.getBoundingClientRect();
+
+                // calc where the pointer is relative to the panel 
+                // prevent panel from jumping when dragging 
+                offsetX = event.clientX - rect.left;
+                offsetY = event.clientY - rect.top;
+
+                this.handle.setPointerCapture(event.pointerId);
+                this.handle.style.cursor = "grabbing";
+            });
+
+            // update panel pos while dragging 
+            this.handle.addEventListener("pointermove", (event) => {
+                if (!dragging) return;
+
+                this.panel.style.right = "auto";
+
+                this.panel.style.left =
+                    `${event.clientX - offsetX}px`;
+
+                this.panel.style.top =
+                    `${event.clientY - offsetY}px`;
+            });
+
+            // stop dragging and restore cursor 
+            const stopDragging = () => {
+                dragging = false;
+                this.handle.style.cursor = "grab";
+            };
+
+            this.handle.addEventListener("pointerup", stopDragging);
+            this.handle.addEventListener("pointercancel", stopDragging);
+            this.handle.addEventListener("lostpointercapture", stopDragging);
+        }
     }
 
     async function main() {
@@ -141,6 +207,12 @@
         const hintPanel = new HintPanel(document); 
 
         hintPanel.mount(); 
+
+        const { panel, handle } = hintPanel.getDragElements(); 
+
+        const panelDragger = new PanelDragger(panel, handle); 
+        panelDragger.attach(); 
+
         hintPanel.setStatus("waiting for puzzle canvas..."); 
 
         try {
