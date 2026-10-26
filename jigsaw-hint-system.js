@@ -29,13 +29,11 @@
             this.preview = this.root.createElement("canvas");
 
             Object.assign(this.preview.style, {
+                display: "block",
                 width: "100%",
                 marginTop: "10px",
                 marginBottom: "10px", 
-                display: "block"
             });
-
-            
 
             // panel style 
             Object.assign(panel.style, {
@@ -52,11 +50,16 @@
                 border: "1px solid black", 
                 borderRadius: "10px", 
                 font: "13px sans-serif", 
-                zIndex: "99999999999"       // control which elem appears infront when overlap 
+                zIndex: "2147483647"       // keep panel above selection overlay
             }); 
 
             const title = this.root.createElement("strong"); 
             title.textContent = "Jigsaw Hint System"; 
+
+            Object.assign(title.style, {
+                display: "block", 
+                marginBottom: "10px"
+            })
 
             panel.append(title); 
 
@@ -114,6 +117,18 @@
 
             panel.append(rowsLabel, colsLabel);
 
+            const selectPiece = this.root.createElement("button"); 
+            this.selectPiece = selectPiece;
+            selectPiece.textContent = "Select Piece"; 
+
+            Object.assign(selectPiece.style, {
+                display: "block", 
+                marginTop: "10px", 
+            }); 
+            
+            panel.append(selectPiece)
+
+
             this.root.body.appendChild(panel); 
 
             this.element = panel; 
@@ -134,7 +149,7 @@
 
             Object.assign(ctx, {
                 strokeStyle: "red",
-                lineWidth: 3
+                lineWidth: 5
             });
 
             // draw vertical lines
@@ -228,6 +243,103 @@
         }
     }
 
+    // select a puzzle piece by drawing a rectangle
+    class PieceSelector {
+        constructor(canvas, onSelect) {
+            this.canvas = canvas;
+            this.onSelect = onSelect;
+            this.start = null;
+
+            // create overlay
+            this.overlay = document.createElement("canvas");
+
+            Object.assign(this.overlay.style, {
+                position: "fixed",
+                zIndex: "2147483646",
+                cursor: "crosshair",
+                display: "none"
+            });
+
+            document.body.appendChild(this.overlay);
+
+            const ctx = this.overlay.getContext("2d");
+
+            // start selection
+            this.overlay.addEventListener("pointerdown", (event) => {
+                this.start = this.getPoint(event);
+                this.overlay.setPointerCapture(event.pointerId);
+            });
+
+            // draw rectangle
+            this.overlay.addEventListener("pointermove", (event) => {
+                if (!this.start) return;
+
+                const end = this.getPoint(event);
+
+                ctx.clearRect(0, 0, this.overlay.width, this.overlay.height);
+
+                Object.assign(ctx, {
+                    strokeStyle: "yellow",
+                    lineWidth: 2
+                });
+
+                ctx.strokeRect(
+                    this.start.x,
+                    this.start.y,
+                    end.x - this.start.x,
+                    end.y - this.start.y
+                );
+            });
+
+            // finish selection
+            this.overlay.addEventListener("pointerup", (event) => {
+                if (!this.start) return;
+
+                const end = this.getPoint(event);
+                const start = this.start;
+
+                this.start = null;
+
+                Object.assign(this.overlay.style, {
+                    display: "none"
+                });
+
+                this.onSelect({
+                    u: Math.min(start.x, end.x) / this.overlay.width,
+                    v: Math.min(start.y, end.y) / this.overlay.height,
+                    width: Math.abs(end.x - start.x) / this.overlay.width,
+                    height: Math.abs(end.y - start.y) / this.overlay.height
+                });
+            });
+        }
+
+        // show overlay on puzzle
+        activate() {
+            const rect = this.canvas.getBoundingClientRect();
+
+            this.overlay.width = rect.width;
+            this.overlay.height = rect.height;
+
+            Object.assign(this.overlay.style, {
+                left: `${rect.left}px`,
+                top: `${rect.top}px`,
+                width: `${rect.width}px`,
+                height: `${rect.height}px`,
+                display: "block"
+            });
+        }
+
+        // convert mouse position to canvas coordinates
+        getPoint(event) {
+            const rect = this.overlay.getBoundingClientRect();
+
+            return {
+                x: (event.clientX - rect.left) * this.overlay.width / rect.width,
+                y: (event.clientY - rect.top) * this.overlay.height / rect.height
+            };
+        }
+    }
+
     function main() {
 
         const canvas = document.querySelector("#jigex-canvas");
@@ -239,6 +351,16 @@
 
         const panelDragger = new PanelDragger(panel, handle); 
         panelDragger.attach(); 
+
+        if (!canvas) return; 
+
+        const selector = new PieceSelector(canvas, (selection) => {
+            console.log("Selected region:", selection);
+        });
+
+        hintPanel.selectPiece.addEventListener("click", () => {
+            selector.activate(); 
+        });
     }
 
     main(); 
