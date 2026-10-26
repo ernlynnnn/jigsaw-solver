@@ -7,6 +7,7 @@
 // @run-at       document-idle
 // @match        https://www.jigsawexplorer.com/online-jigsaw-puzzle-player.html*
 // @grant        none
+// @require      https://docs.opencv.org/4.13.0/opencv.js
 // ==/UserScript==
 
 (function() {
@@ -370,6 +371,61 @@
         return piece;
     }
 
+    // find the top 3 matching grid cells using OpenCV
+    function matchPiece(piece, reference, rows, cols) {
+        const matches = [];
+        const size = 40;
+
+        // resize selected piece
+        const pieceMat = cv.imread(piece);
+        const template = new cv.Mat();
+
+        cv.resize(pieceMat, template, new cv.Size(size, size));
+
+        // compare with each ref grid cell
+        for (let row = 0; row < rows; row++) {
+            for (let col = 0; col < cols; col++) {
+
+                const cell = document.createElement("canvas");
+                cell.width = size;
+                cell.height = size;
+
+                // crop and resize reference cell
+                cell.getContext("2d").drawImage(
+                    reference,
+                    col * reference.naturalWidth / cols,
+                    row * reference.naturalHeight / rows,
+                    reference.naturalWidth / cols,
+                    reference.naturalHeight / rows,
+                    0, 0, size, size
+                );
+
+                const cellMat = cv.imread(cell);
+                const result = new cv.Mat();
+
+                // calculate similarity
+                cv.matchTemplate(cellMat, template, result, cv.TM_SQDIFF_NORMED);
+
+                const score = 1 - cv.minMaxLoc(result).minVal;
+
+                matches.push({
+                    row: row + 1,
+                    col: col + 1,
+                    score
+                });
+
+                cellMat.delete();
+                result.delete();
+            }
+        }
+
+        pieceMat.delete();
+        template.delete();
+
+        // return the top 3 matches
+        return matches.sort((a, b) => b.score - a.score).slice(0, 3);
+    }
+
 
     function main() {
 
@@ -392,6 +448,15 @@
             hintPanel.selectedPreview.height = piece.height;
 
             hintPanel.selectedPreview.getContext("2d").drawImage(piece, 0, 0);
+
+            const matches = matchPiece(
+                piece,
+                hintPanel.referenceImage,
+                hintPanel.rows,
+                hintPanel.cols
+            );
+
+            console.log("Top 3 matches:", matches);
         });
 
         hintPanel.selectPiece.addEventListener("click", () => {
