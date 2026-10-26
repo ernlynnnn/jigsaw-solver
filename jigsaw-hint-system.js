@@ -78,14 +78,75 @@
         }
     }
 
+    class HintPanel {
+        constructor(root) {
+            this.root = root; 
+            this.element = null; 
+            this.statusElement = null; 
+        }
+
+        // create and display the panel 
+        mount() {
+            // avoid duplicates 
+            if (this.element) return; 
+
+            const panel = this.root.createElement("section"); 
+            panel.id = "jigsaw-hint-panel"; 
+
+            // panel style 
+            Object.assign(panel.style, {
+                position: "fixed", 
+                top: "12px", 
+                right: "12px", 
+                width: "285px", 
+                maxHeight: "calc(100vh - 24px)", 
+                overflowY: "auto", 
+                boxSizing: "border-box", 
+                padding: "12px", 
+                background: "blue", 
+                color: "white", 
+                border: "1px solid black", 
+                borderRadius: "10px", 
+                font: "13px, sans-serif", 
+                zIndex: "99999999999"       // control which elem appears infront when overlap 
+            }); 
+
+            const title = this.root.createElement("strong"); 
+            title.textContent = "Jigsaw Hint System"; 
+
+            const status = this.root.createElement("p"); 
+            status.setAttribute("role", "status"); 
+
+            panel.append(title, status); 
+            this.root.body.appendChild(panel); 
+
+            this.element = panel; 
+            this.statusElement = status; 
+        }
+
+        // update message 
+        setStatus(message) {
+            if (this.statusElement) {
+                this.statusElement.textContent = message; 
+            }
+        }
+    }
+
     async function main() {
         const canvasLocator = new CanvasLocator(
             document, 
             "#jigex-canvas"
         ); 
 
+        const hintPanel = new HintPanel(document); 
+
+        hintPanel.mount(); 
+        hintPanel.setStatus("waiting for puzzle canvas..."); 
+
         try {
             const canvas = await canvasLocator.waitForCanvas(); 
+
+            hintPanel.setStatus("puzzle canvas found"); 
 
             console.info("canvas found:", canvas); 
         } catch (error) {
