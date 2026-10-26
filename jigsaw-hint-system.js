@@ -129,6 +129,9 @@
             
             panel.append(selectPiece)
 
+            this.results = this.root.createElement("div");
+            this.results.style.marginTop = "10px";
+
             this.selectedPreview = this.root.createElement("canvas");
 
             Object.assign(this.selectedPreview.style, {
@@ -139,6 +142,7 @@
             });
 
             panel.append(this.selectedPreview);
+            panel.append(this.results);
 
 
             this.root.body.appendChild(panel); 
@@ -183,6 +187,36 @@
                 ctx.lineTo(canvas.width, y);
                 ctx.stroke();
             }
+        }
+
+        // highlight top 3 matching cells
+        showMatches(matches) {
+            this.drawGrid();
+    
+            const canvas = this.preview;
+            const ctx = canvas.getContext("2d");
+    
+            const cellWidth = canvas.width / this.cols;
+            const cellHeight = canvas.height / this.rows;
+            const colors = ["green", "yellow", "white"];
+    
+            matches.forEach((match, index) => {
+                const x = (match.col - 1) * cellWidth;
+                const y = (match.row - 1) * cellHeight;
+    
+                ctx.strokeStyle = colors[index];
+                ctx.lineWidth = 12;
+                ctx.strokeRect(x, y, cellWidth, cellHeight);
+            });
+    
+            console.log("top 3 match:", matches);
+    
+            this.results.innerHTML = matches.map((match, index) => `
+                <p>
+                    ${index + 1}. row ${match.row}, column ${match.col}
+                    (score: ${match.score.toFixed(3)})
+                </p>
+            `).join("");
         }
 
         getDragElements() {
@@ -426,7 +460,6 @@
         return matches.sort((a, b) => b.score - a.score).slice(0, 3);
     }
 
-
     function main() {
 
         const canvas = document.querySelector("#jigex-canvas");
@@ -446,7 +479,6 @@
 
             hintPanel.selectedPreview.width = piece.width;
             hintPanel.selectedPreview.height = piece.height;
-
             hintPanel.selectedPreview.getContext("2d").drawImage(piece, 0, 0);
 
             const matches = matchPiece(
@@ -456,7 +488,7 @@
                 hintPanel.cols
             );
 
-            console.log("Top 3 matches:", matches);
+            hintPanel.showMatches(matches);
         });
 
         hintPanel.selectPiece.addEventListener("click", () => {
